@@ -18,16 +18,34 @@ def plot_ising(adj):
     # Create plot of Ising model
     
     G=nx.from_numpy_array(adj)
-    pos = nx.spring_layout(G, seed=63)
+    pos = nx.spring_layout(G)
     nx.draw(G, pos, with_labels=True, font_weight='bold')
     nx.draw_networkx_edge_labels(G, pos)
     plt.show()
 
 def solve_ising(adj):
-    #Solve Ising 
+    #Solve Ising by exhaustion
+    n=len(adj)
+    adj=np.array(adj/2)
+    costs=[]
+
+    for k in range(2**n):
+        bits=list(format(k, '0'+str(n)+'b'))
+        zeig=np.array([1-2*int(x) for x in bits])
+        value=np.dot(zeig,np.dot(adj,zeig))
+        costs.append(value)
+        
+    min_value=min(costs)
+    place=[format(i, '0'+str(n)+'b') for i,j in enumerate(costs) if j == min_value]
+
+    return place
+
+
+
+
 
 
 mat=[[0,1],[1,0]]
-y=gen(mat)
-print(y)
-plot_ising(y)
+y=gen_ising(mat)
+
+print(solve_ising(y))
