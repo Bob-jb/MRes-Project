@@ -18,7 +18,7 @@ def plot_ising(adj):
     # Create plot of Ising model
     
     G=nx.from_numpy_array(adj)
-    pos = nx.spring_layout(G)
+    pos = nx.shell_layout(G)
     nx.draw(G, pos, with_labels=True, font_weight='bold')
     nx.draw_networkx_edge_labels(G, pos)
     plt.show()
@@ -45,7 +45,15 @@ def solve_ising(adj):
 
 
 
-mat=[[0,1],[1,0]]
+mat=[[0,1,0,0,0,0,0],
+     [1,0,1,1,0,0,0],
+     [0,1,0,0,0,0,0],
+     [0,1,0,0,0,1,0],
+     [0,0,0,0,0,1,0],
+     [0,0,0,1,1,0,1],
+     [0,0,0,0,0,1,0]]
+
 y=gen_ising(mat)
+plot_ising(y)
 
 print(solve_ising(y))
