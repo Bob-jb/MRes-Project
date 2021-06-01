@@ -1,6 +1,8 @@
 import numpy as np
 import networkx as nx
+import math
 import matplotlib.pyplot as plt
+from mpl_toolkits import mplot3d
 
 def gen_ising(adj,local_t=False):
     #Create a hardware native spin glass of the form 
@@ -39,7 +41,6 @@ def solve_ising(adj):
         bits=list(format(k, '0'+str(n)+'b'))
         zeig=np.array([1-2*int(x) for x in bits])
         value=np.dot(zeig,np.dot(adj,zeig))+np.dot(np.array(h),zeig)
-        print(np.dot(zeig,np.dot(adj,zeig)))
         costs.append(value)
         
     min_value=min(costs)
@@ -49,20 +50,71 @@ def solve_ising(adj):
 
 
 
+def cost_function(beta,gamma):
+    return (beta-2)**2+(gamma-5)**2
+
+def exhaustive_search(resolution=30):
+    step=list(range(resolution))
+    dbeta=[b/resolution*math.pi for b in step]
+    dgamma=[2*g/resolution*math.pi for g in step]
+    cost=[]
+    for gvalue in dgamma:
+        cost.append([cost_function(bvalue,gvalue) for bvalue in dbeta])
+    
+    cost=np.array(cost)
+    [m,n] = np.shape(cost)
+    plt.figure()
+    plt.imshow(cost, alpha=0.8)
+    plt.xticks(np.arange(n))
+    plt.yticks(np.arange(m))
+    plt.xlabel('Numbers')
+    plt.ylabel('Value')
+    plt.title('Color Maps')
+    plt.show()
+
+    min=np.min(cost)
+    place=[(dbeta[m],dgamma[i]) for i,j in enumerate(cost) for m,n in enumerate(j) if n == min]
+    print(place)
+    return place
 
 
 
-#mat=[[0,1,0,0,0,0,0],
-#     [1,0,1,1,0,0,0],
-#     [0,1,0,0,0,0,0],
-#     [0,1,0,0,0,1,0],
-#     [0,0,0,0,0,1,0],
-#     [0,0,0,1,1,0,1],
-#     [0,0,0,0,0,1,0]]
-mat=[[0,1],[1,0]]
+def gradient(bi=0,gi=0,threshold=0.00001,max_iterations=500,learning_rate=0.05,momentum=0):
+    i=0
+    diff=1.0e10
+    b=bi
+    g=gi
+    cbgn= cost_function(b,g)
 
-y=gen_ising(mat,True)
+    while i<=max_iterations and diff>threshold:
 
-y=np.array([[1,1],[1,-1]])
-print(y)
-print(solve_ising(y))
+       cbg=cbgn
+       d = [cost_function(b+learning_rate,g) - cbg,
+       cost_function(b,g+learning_rate) - cbg]
+       delta=[-1*dvalue+momentum*dvalue for dvalue in d]
+       b=b+delta[0]
+       g=g+delta[1]
+       cbgn= cost_function(b,g)
+       i=i+1
+       diff=np.abs(cbg-cbgn)
+
+
+    print(b,g)
+    return((b,g))
+
+
+
+mat=[[0,1,0,0,0,0,0],
+     [1,0,1,1,0,0,0],
+     [0,1,0,0,0,0,0],
+     [0,1,0,0,0,1,0],
+     [0,0,0,0,0,1,0],
+     [0,0,0,1,1,0,1],
+     [0,0,0,0,0,1,0]]
+#mat=[[0,1],[1,0]]
+
+#y=gen_ising(mat,True)
+#print(y)
+#print(solve_ising(y))
+
+gradient()
