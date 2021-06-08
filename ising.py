@@ -2,7 +2,7 @@ import numpy as np
 import networkx as nx
 import math
 import matplotlib.pyplot as plt
-from mpl_toolkits import mplot3d
+
 
 def gen_ising(adj,local_t=False):
     #Create a hardware native spin glass of the form 
