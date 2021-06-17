@@ -1,5 +1,6 @@
 import numpy as np
 import dimod
+from dwave.system import DWaveSampler, EmbeddingComposite
 
 #Create problem instance
 
@@ -115,6 +116,9 @@ sampleset = dimod.ExactSolver().sample(bqm)
 sampleset.change_vartype('BINARY')
 print(sampleset.lowest())
 
+sampler = EmbeddingComposite(DWaveSampler())
+sampleset = sampler.sample(bqm, num_reads=1000)
+print(sampleset)
 
 
 
