@@ -1,8 +1,9 @@
 import numpy as np
 import dimod
-from dwave.system import DWaveSampler, EmbeddingComposite
+from dwave.system import DWaveSampler, AutoEmbeddingComposite
 from dwave.inspector import show
 from dwave.cloud import Client
+import random
 
 #Create problem instance
 
@@ -105,7 +106,7 @@ chimera32={'0':[4,5,6,7,16],'1':[4,5,6,7,17],'2':[4,5,6,7,18],'3':[4,5,6,7,19],'
 '16':[20,21,22,23,0],'17':[20,21,22,23,1],'18':[20,21,22,23,2],'19':[20,21,22,23,3],'20':[16,17,18,19,28],'21':[16,17,18,19,29],'22':[16,17,18,19,30],'23':[16,17,18,19,31],
 '24':[28,29,30,31,8],'25':[28,29,30,31,9],'26':[28,29,30,31,10],'27':[28,29,30,31,11],'28':[24,25,26,27,20],'29':[24,25,26,27,21],'30':[24,25,26,27,22],'31':[24,25,26,27,23]}
 
-question=planted_solution(chimera32,number_of_loops=20,scale=False)
+question=planted_solution(chimera32,number_of_loops=30)
 solution=energy(question['solution'],question['ising_model'])
 solution_string=solution['string']
 solution_energy=solution['energy']
@@ -113,20 +114,78 @@ solution_energy=solution['energy']
 h,J=adjgraph(question['ising_model'])
 
 bqm = dimod.BinaryQuadraticModel.from_ising(h, J, offset = 0.0)
+
+
 #h=[]
 #sampleset = dimod.ExactSolver().sample(bqm)
 #sampleset.change_vartype('BINARY')
 #print(sampleset.lowest())
 
-qpu=DWaveSampler(solver={'topology__type': 'chimera'})
-print(qpu.properties["annealing_time_range"])
-print(qpu.properties['default_annealing_time'])
-sampler = AutoEmbeddingComposite(qpu)
-sampleset = sampler.sample(bqm, num_reads=1000)
-print(sampleset.lowest())
-show(sampleset)
+#qpu=DWaveSampler(solver={'topology__type': 'chimera'})
+#print(qpu.properties["annealing_time_range"])
+#print(qpu.properties['default_annealing_time'])
+#sampler = AutoEmbeddingComposite(qpu)
+#sampleset = sampler.sample(bqm, num_reads=1000)
+#sampleset.change_vartype('BINARY')
+#print(sampleset.lowest())
+#show(sampleset)
 
 print(solution_energy)
+
+
+
+def short_anneal(bqm,t=False,num_reads=10):
+    qpu=DWaveSampler(solver={'topology__type': 'chimera'})
+    sampler = AutoEmbeddingComposite(qpu)
+
+    #time in microseconds between 1 and 2000
+
+    if t:
+        if t< qpu.properties["annealing_time_range"][0]:
+            raise ValueError('time is too short')
+        elif t> qpu.properties["annealing_time_range"][1]:
+            raise ValueError('time is too long')
+        else:
+            sampleset = sampler.sample(bqm, annealing_time=t, num_reads=num_reads)
+    else:
+        short_time=qpu.properties["annealing_time_range"][0]
+        sampleset = sampler.sample(bqm, annealing_time=short_time, num_reads=num_reads)
+    
+    sampleset.change_vartype('BINARY')
+    show(sampleset)
+
+    return sampleset.lowest()
+
+#print(short_anneal(bqm))
+
+def reverse_annealing(bqm,reverse_schedule = [[0.0, 1.0], [5, 0.45], [99, 0.45], [100, 1.0]],initial_state='',refresh_each_run=True, num_reads=10):
+    #[time, problem ratio]
+    #Initial_state is a string
+
+    if initial_state:
+        initial={qubit: state for qubit,state in enumerate(list(initial_state))}
+    else:
+        initial={qubit: random.randint(0, 1) for qubit in list(range(len(bqm)))}
+    
+    
+    qpu=DWaveSampler(solver={'topology__type': 'chimera'})
+    sampler = AutoEmbeddingComposite(qpu)
+
+    reverse_anneal_params = dict(anneal_schedule=reverse_schedule, initial_state=initial, reinitialize_state=refresh_each_run)
+    sampleset = sampler.sample(bqm, num_reads=num_reads, **reverse_anneal_params)
+    sampleset.change_vartype('BINARY')
+
+    show(sampleset)
+    return {'initial_state':initial_state, 'lowest_energies':sampleset.lowest()}
+
+print(reverse_annealing(bqm))
+
+
+
+    
+
+
+
 
 
 
