@@ -1,6 +1,8 @@
 import numpy as np
 import dimod
 from dwave.system import DWaveSampler, EmbeddingComposite
+from dwave.inspector import show
+from dwave.cloud import Client
 
 #Create problem instance
 
@@ -103,7 +105,7 @@ chimera32={'0':[4,5,6,7,16],'1':[4,5,6,7,17],'2':[4,5,6,7,18],'3':[4,5,6,7,19],'
 '16':[20,21,22,23,0],'17':[20,21,22,23,1],'18':[20,21,22,23,2],'19':[20,21,22,23,3],'20':[16,17,18,19,28],'21':[16,17,18,19,29],'22':[16,17,18,19,30],'23':[16,17,18,19,31],
 '24':[28,29,30,31,8],'25':[28,29,30,31,9],'26':[28,29,30,31,10],'27':[28,29,30,31,11],'28':[24,25,26,27,20],'29':[24,25,26,27,21],'30':[24,25,26,27,22],'31':[24,25,26,27,23]}
 
-question=planted_solution(unit_cell,number_of_loops=20,scale=False)
+question=planted_solution(chimera32,number_of_loops=20,scale=False)
 solution=energy(question['solution'],question['ising_model'])
 solution_string=solution['string']
 solution_energy=solution['energy']
@@ -111,16 +113,20 @@ solution_energy=solution['energy']
 h,J=adjgraph(question['ising_model'])
 
 bqm = dimod.BinaryQuadraticModel.from_ising(h, J, offset = 0.0)
-h=[]
-sampleset = dimod.ExactSolver().sample(bqm)
-sampleset.change_vartype('BINARY')
-print(sampleset.lowest())
+#h=[]
+#sampleset = dimod.ExactSolver().sample(bqm)
+#sampleset.change_vartype('BINARY')
+#print(sampleset.lowest())
 
-sampler = EmbeddingComposite(DWaveSampler())
+qpu=DWaveSampler(solver={'topology__type': 'chimera'})
+print(qpu.properties["annealing_time_range"])
+print(qpu.properties['default_annealing_time'])
+sampler = AutoEmbeddingComposite(qpu)
 sampleset = sampler.sample(bqm, num_reads=1000)
-print(sampleset)
+print(sampleset.lowest())
+show(sampleset)
 
-
+print(solution_energy)
 
 
 
