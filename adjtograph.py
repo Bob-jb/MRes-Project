@@ -1,4 +1,7 @@
 import numpy as np
+import random
+
+from numpy.lib.twodim_base import tri
 
 def adjgraph(adj):
     adj=np.array(adj)
@@ -10,7 +13,7 @@ def adjgraph(adj):
     return h,j
 
 mat=[[1,2,3],[4,5,6],[7,8,9]]
-print(adjgraph(mat))
+#print(adjgraph(mat))
 
 def planted_solution(network,loop_min=4, loop_max=100, number_of_loops=10,scale=1):
     
@@ -67,11 +70,11 @@ def planted_solution(network,loop_min=4, loop_max=100, number_of_loops=10,scale=
     return{'solution':solution_str,'ising_model':ising}
 
 
-unit_cell={'0':[4,5,6,7],'1':[4,5,6,7],'2':[4,5,6,7],'3':[4,5,6,7],'4':[0,1,2,3],'5':[0,1,2,3],'6':[0,1,2,3],'7':[0,1,2,3]}
+#unit_cell={'0':[4,5,6,7],'1':[4,5,6,7],'2':[4,5,6,7],'3':[4,5,6,7],'4':[0,1,2,3],'5':[0,1,2,3],'6':[0,1,2,3],'7':[0,1,2,3]}
 
-question=planted_solution(unit_cell,number_of_loops=6,scale=False)
-print(question['ising_model'])
-print(adjgraph(question['ising_model']))
+#question=planted_solution(unit_cell,number_of_loops=6,scale=False)
+#print(question['ising_model'])
+#print(adjgraph(question['ising_model']))
 
 
 def energy(string, adj):
@@ -87,5 +90,73 @@ def energy(string, adj):
     return {'energy':value,'string':string}
 
 
+
+def resacale_to_one(isingProblem):
+    max_field=np.amax([abs(field) for field in isingProblem.values()])
+    for coupling,strength in isingProblem.items():
+        isingProblem[coupling]=strength/max_field
+
+    return(isingProblem)
+
+
+
+def energy_Dwave(string,couplings):
+
+    bits=list(string)
+    zeig=[1-2*int(binary) for binary in bits]
+    energy=0
+
+    for coupling,field in couplings.items():
+        qubit1,qubit2=coupling
+        energy=energy+zeig[qubit1]*zeig[qubit2]*field
+
+    return {'energy':energy,'string':string}
+
+
+
 def random_string_generator(isingProblem,trials):
-    
+
+
+    n=len(isingProblem)
+    best_guess={'guess':'binary_string','energy':999}
+
+
+    for number in range(trials):
+        guess=format(random.randint(0,2**n-1), '0'+str(n)+'b')
+        trial=energy_Dwave(guess,isingProblem)
+        if trial['energy']<best_guess['energy']:
+            best_guess['guess']=trial['string']
+            best_guess['energy']=trial['energy']
+
+    return {qubit:int(state) for qubit,state in enumerate(best_guess['guess'])},best_guess['energy']
+
+
+def tesselationOneProblem(isingProblem, numberCopies=8, qubitNumber=24):
+    dic_to_out={}
+
+    for k in range(numberCopies):
+        for coupling, field in isingProblem.items():
+            qubit1,qubit2=coupling
+            dic_to_out[(qubit1+k*qubitNumber,qubit2+k*qubitNumber)]=field
+
+    return dic_to_out
+
+def tesselationProblems(listIsingProblems,numberCopiesEach=8, qubitNumber=24):
+
+
+    listUpdated=[]
+    for buffer,instance in enumerate(listIsingProblems):
+        holding_dic={}
+        for coupling, field in instance.items():
+            qubit1,qubit2= coupling
+            holding_dic[(qubit1+buffer*qubitNumber,qubit2+buffer*qubitNumber)]=field
+        listUpdated.append(holding_dic)
+
+    mergedDic={instance:value for mini_dic in listUpdated for instance,value in mini_dic.items()}
+
+    print(mergedDic)
+
+    return tesselationOneProblem(mergedDic,numberCopies=numberCopiesEach,qubitNumber=qubitNumber*len(listIsingProblems))
+
+test=[{(0,1):1,(3,4):1} ,{(0,2):-3,(2,3):-1}]
+print(tesselationProblems(test,numberCopiesEach=3,qubitNumber=5))
