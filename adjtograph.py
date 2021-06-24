@@ -72,3 +72,20 @@ unit_cell={'0':[4,5,6,7],'1':[4,5,6,7],'2':[4,5,6,7],'3':[4,5,6,7],'4':[0,1,2,3]
 question=planted_solution(unit_cell,number_of_loops=6,scale=False)
 print(question['ising_model'])
 print(adjgraph(question['ising_model']))
+
+
+def energy(string, adj):
+    n=len(adj)
+    h=np.diag(adj)
+    adj=np.array(adj/2)-np.diag(h)/2
+
+    bits=list(string)
+    zeig=np.array([1-2*int(x) for x in bits])
+    value=np.dot(zeig,np.dot(adj,zeig))+np.dot(np.array(h),zeig)
+    
+
+    return {'energy':value,'string':string}
+
+
+def random_string_generator(isingProblem,trials):
+    
