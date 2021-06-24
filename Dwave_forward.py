@@ -1,6 +1,7 @@
 import numpy as np
 import dimod
 from dwave.system import DWaveSampler, EmbeddingComposite
+from dwave.cloud import Client
 
 #Create problem instance
 
