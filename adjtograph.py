@@ -158,5 +158,30 @@ def tesselationProblems(listIsingProblems,numberCopiesEach=8, qubitNumber=24):
 
     return tesselationOneProblem(mergedDic,numberCopies=numberCopiesEach,qubitNumber=qubitNumber*len(listIsingProblems))
 
-test=[{(0,1):1,(3,4):1} ,{(0,2):-3,(2,3):-1}]
-print(tesselationProblems(test,numberCopiesEach=3,qubitNumber=5))
+def relabelChimera(connection_dictionary):
+    
+    remapped_dictionary={}
+    for connection,field in connection_dictionary.items():
+        qubit1,qubit2=connection
+        if 0<= qubit1 <= 3:
+            qubit1=qubit1+4
+        elif 4<= qubit1 <= 7:
+            qubit1=qubit1-4
+        elif 16<= qubit1 <= 19:
+            qubit1=qubit1+4
+        elif 20<= qubit1 <= 23:
+            qubit1=qubit1-4
+
+        if 0<= qubit2 <= 3:
+            qubit2=qubit2+4
+        elif 4<= qubit2 <= 7:
+            qubit2=qubit2-4
+        elif 16<= qubit2 <= 19:
+            qubit2=qubit2+4
+        elif 20<= qubit2 <= 23:
+            qubit2=qubit2-4
+
+        remapped_dictionary[(qubit1,qubit2)]=field
+
+    return remapped_dictionary
+        
